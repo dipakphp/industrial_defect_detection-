@@ -144,7 +144,7 @@ industrial_defect_detection/
 ### Option B — Local Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/industrial-defect-detection.git
+git clone https://github.com/dipakphp/industrial-defect-detection.git
 cd industrial-defect-detection
 
 pip install -r requirements.txt
@@ -303,7 +303,7 @@ MIT License — see [LICENSE](LICENSE).
   title     = {Industrial Defect Detection using ViT + β-VAE + DDPM},
   year      = {2026},
   publisher = {GitHub},
-  url       = {https://github.com/YOUR_USERNAME/industrial-defect-detection}
+  url       = {https://github.com/dipakphp/industrial-defect-detection}
 }
 ```
 
