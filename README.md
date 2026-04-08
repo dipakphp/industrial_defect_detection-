@@ -135,7 +135,7 @@ industrial_defect_detection/
 ## ⚡ Quick Start
 
 ### Option A — Google Colab (Recommended)
-
+Use this file for Google Colab [Industrial_Defect_Detection.ipynb](Industrial_Defect_Detection.ipynb)
 1. Open `Industrial_Defect_Detection.ipynb` in [Google Colab](https://colab.research.google.com)
 2. Select **Runtime → Change runtime type → GPU (T4)**
 3. Run all cells top-to-bottom
