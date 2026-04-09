@@ -1,315 +1,346 @@
 # 🏭 Industrial Defect Detection — ViT + β-VAE + DDPM
 
-A production-ready deep learning pipeline for industrial surface defect detection,
-combining **Vision Transformers**, **Beta-Variational Autoencoders**, and
-**Denoising Diffusion Probabilistic Models** into a unified, deployable system.
+**MSc Thesis Project | University of Debrecen — Faculty of Informatics | Data Science MSc**
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red)](https://pytorch.org)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Gradio](https://img.shields.io/badge/UI-Gradio-orange)](https://gradio.app)
+> *Developing High-Level AI Architectures and Systems for Industrial Defect Detection using Transformers, VAEs, and Diffusion Models*
+
+**Author:** Paudel Dipak &nbsp;|&nbsp; **Supervisor:** Dr. Robert Lakatos, Assistant Professor
 
 ---
 
-## 📋 Table of Contents
+## 🚀 Live Demo
 
-- [Overview](#-overview)
-- [Architecture](#-architecture)
-- [Supported Datasets](#-supported-datasets)
-- [Project Structure](#-project-structure)
-- [Quick Start](#-quick-start)
-- [Configuration](#-configuration)
-- [Training](#-training)
-- [Evaluation](#-evaluation)
-- [Gradio Web App](#-gradio-web-app)
-- [Results](#-results)
-- [Known Issues & Fixes](#-known-issues--fixes)
-- [Citation](#-citation)
+Try the deployed application directly in your browser — no installation required:
 
----
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Demo-blue?style=for-the-badge)](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)
 
-## 🔍 Overview
+**→ [https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)**
 
-This project implements a **tri-modal defect detection pipeline** that:
-
-| Component | Role | Key Feature |
-|-----------|------|-------------|
-| **ViT-B/16** | Multi-class defect classification | Global attention over full image |
-| **β-VAE** | Unsupervised anomaly localisation | Pixel-level heatmap without labels |
-| **DDPM U-Net** | Synthetic defect data generation | Stable diffusion-based augmentation |
-| **Fusion Classifier** | Final prediction | Combines all three streams |
-
-The system runs end-to-end on **Google Colab** (free tier with GPU) and ships a
-**Gradio web interface** for real-time inference.
+Upload any steel surface image and the system will:
+- **Classify** the defect type with confidence score
+- **Localise** the anomaly with a colour-coded heatmap (blue = normal, red = anomaly)
+- **Quantify** severity: NORMAL / LOW / MODERATE / HIGH
+- **Visualise** the DDPM forward diffusion process in Generation mode
 
 ---
 
-## 🏗 Architecture
+## 📋 Overview
+
+This project implements a unified industrial surface defect detection pipeline combining three deep learning paradigms, each addressing a distinct limitation of the others:
+
+| Component | Architecture | Role |
+|-----------|-------------|------|
+| **ViT-B/16** | Vision Transformer (86M params) | Multi-class defect classification |
+| **β-VAE** | Convolutional VAE, β=4.0 (25M params) | Unsupervised pixel-level anomaly localisation |
+| **DDPM** | U-Net denoiser, T=1000 (13M params) | Synthetic defect image generation |
+| **Fusion Classifier** | 3-stream MLP (1M params) | Late fusion of all three component outputs |
+
+**Dataset:** NEU Steel Surface Defect Database — 1,800 greyscale images across 6 defect classes
+
+**Results:**
+- ✅ **100% test-set accuracy** (270/270 correct predictions)
+- ✅ **Weighted F1-score: 1.0000**
+- ✅ **Severity-proportional anomaly scoring** confirmed on live inference (crazing: 80.6% HIGH, inclusion: 26.1% MODERATE)
+- ✅ **GPU-accelerated inference: 0.5–1.5 seconds per image**
+
+---
+
+## 🏗️ System Architecture
 
 ```
 Input Image (224×224 RGB)
         │
-        ├──────────────────────────────────────────────────┐
-        ▼                                                  ▼
-  ┌─────────────┐                               ┌──────────────────┐
-  │  ViT-B/16   │                               │    β-VAE         │
-  │  (768-dim   │                               │  Encoder→Decoder │
-  │   features) │                               │  Anomaly Score   │
-  └──────┬──────┘                               └────────┬─────────┘
-         │  768d                                         │ 256d + score
-         └────────────────────┬──────────────────────────┘
-                              ▼
-                   ┌──────────────────┐
-                   │ Fusion Classifier│
-                   │  MLP(1025 → C)   │
-                   └────────┬─────────┘
-                            ▼
-                     Final Prediction
-              (class + confidence + heatmap)
+        ├──────────────────────────┐
+        │                          │
+        ▼                          ▼
+  ┌─────────────┐          ┌─────────────┐
+  │  ViT-B/16   │          │   β-VAE     │
+  │  ImageNet   │          │  [-1,+1]    │
+  │  Norm       │          │  Norm       │
+  └──────┬──────┘          └──────┬──────┘
+         │                        │
+   768-d [CLS]             256-d latent μ
+   feature vector          + reconstruction x̂
+         │                        │
+         │                   Anomaly Score
+         │                  A(x) = mean|x−x̂|
+         │                        │
+         └──────────┬─────────────┘
+                    │
+                    ▼
+           ┌─────────────────┐
+           │ Fusion Classifier│
+           │ 769-d → MLP → C │
+           └────────┬────────┘
+                    │
+                    ▼
+            Class Prediction
+           + Confidence %
+           + Severity Label
+           + Heatmap Overlay
 ```
 
-**DDPM** runs offline to generate synthetic training data and is exposed in
-Generation mode within the Gradio app.
+The **DDPM** component is used offline for synthetic data augmentation and powers the **Generation mode** in the Gradio application.
 
 ---
 
-## 📦 Supported Datasets
-
-| Dataset | Classes | Images | Notes |
-|---------|---------|--------|-------|
-| **NEU Steel** ⭐ | 6 | 1,800 | Default — auto-downloads via Kaggle |
-| **MVTec AD** | varies | ~5,000/category | One category at a time |
-| **Kaggle Severstal Steel** | 5 | 12,568 | Requires `kaggle.json` |
-| **DAGM 2007** | 10 | ~14,000 | Synthetic textures |
-| **Custom** | any | any | ZIP with `class_name/img.jpg` layout |
-
----
-
-## 📁 Project Structure
+## 📂 Repository Structure
 
 ```
-industrial_defect_detection/
-│
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── .gitignore
-│
-├── configs/
-│   └── config.py              # All hyperparameters in one place
-│
-├── src/
-│   ├── __init__.py
-│   ├── datasets.py            # MVTec, NEU Steel, Kaggle, DAGM adapters
-│   ├── transforms.py          # Train / val / VAE normalisation pipelines
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── vit.py             # ViT-B/16 with progressive unfreezing
-│   │   ├── vae.py             # β-VAE (encoder + decoder + ELBO loss)
-│   │   ├── ddpm.py            # DDPM U-Net + DDPMScheduler
-│   │   └── fusion.py          # FusionClassifier + FullPipeline
-│   └── utils/
-│       ├── __init__.py
-│       ├── training.py        # train_vit, train_vae, train_ddpm, train_fusion
-│       ├── evaluation.py      # evaluate(), confusion matrix, ROC curves
-│       └── heatmap.py         # Vivid anomaly heatmap generation
-│
-├── scripts/
-│   ├── download_data.py       # Dataset download helpers
-│   └── export_onnx.py         # ONNX export utility
-│
-├── app.py                     # Gradio web application (standalone)
-│
-├── tests/
-│   ├── test_models.py         # Unit tests for model forward passes
-│   └── test_datasets.py       # Unit tests for dataset adapters
-│
-├── docs/
-│   └── ARCHITECTURE.md        # Detailed architecture notes
-│
-└── Industrial_Defect_Detection.ipynb   # Main Colab notebook
+├── Industrial_Defect_Detection.ipynb   # Main Colab notebook (run top-to-bottom)
+├── app.py                              # Gradio application (deployed on HF Spaces)
+├── requirements.txt                    # Python dependencies
+└── README.md                           # This file
 ```
 
 ---
 
 ## ⚡ Quick Start
 
-### Option A — Google Colab (Recommended)
-Use this file for Google Colab [Industrial_Defect_Detection.ipynb](Industrial_Defect_Detection.ipynb)
-1. Open `Industrial_Defect_Detection.ipynb` in [Google Colab](https://colab.research.google.com)
-2. Select **Runtime → Change runtime type → GPU (T4)**
-3. Run all cells top-to-bottom
-4. The Gradio app launches automatically at the end
+### Option A — Run in Google Colab (Recommended)
 
-### Option B — Local Installation
+1. Open the notebook in Colab:
 
-```bash
-git clone https://github.com/dipakphp/industrial-defect-detection.git
-cd industrial-defect-detection
+   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/industrial-defect-detection/blob/main/Industrial_Defect_Detection.ipynb)
 
-pip install -r requirements.txt
+2. Set runtime to **GPU**: `Runtime → Change runtime type → GPU (T4 or A100)`
 
-# Download NEU Steel dataset (requires kaggle.json in ~/.kaggle/)
-python scripts/download_data.py --dataset neu_steel
+3. Run all cells top-to-bottom — the notebook handles everything:
+   - Package installation
+   - Dataset download (NEU Steel via Kaggle API or gdown)
+   - Training all four components
+   - Evaluation and live inference
+   - Checkpoint saving
 
-# Train full pipeline
-python -c "
-from src.datasets import build_dataloaders
-from src.models.vit import ViTFeatureExtractor
-from src.models.vae import BetaVAE
-from src.models.ddpm import UNet, DDPMScheduler
-from src.models.fusion import FusionClassifier, FullPipeline
-from src.utils.training import train_vit, train_vae, train_ddpm, train_fusion
-from configs.config import Config
+### Option B — Use the Live Demo
 
-cfg = Config()
-# ... see notebook for full pipeline
-"
-```
+Visit the Hugging Face Space directly: **[dipakpaudel333/Industrial-Defect-Detection](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)**
+
+No setup required — just upload an image and click **Run Analysis**.
 
 ---
 
-## ⚙️ Configuration
+## 🗃️ Supported Datasets
 
-All hyperparameters live in `configs/config.py`:
+| `DATASET_CHOICE` | Dataset | Images | Download |
+|-----------------|---------|--------|---------|
+| `'neu_steel'` | **NEU Steel Surface Defects** *(default)* | 1,800 | Auto via gdown / Kaggle |
+| `'mvtec'` | MVTec Anomaly Detection | ~5,000 | Auto from mvtec.com |
+| `'dagm'` | DAGM 2007 Industrial Textures | ~14,000 | Auto via gdown |
+| `'kaggle_steel'` | Severstal Steel Defect Detection | 12,568 | Requires `kaggle.json` |
+| `'custom'` | Your own images | Any | Upload a ZIP |
 
-```python
-class Config:
-    # Dataset
-    DATASET_CHOICE  = 'neu_steel'   # mvtec | neu_steel | dagm | kaggle_steel | custom
-    MVTEC_CATEGORY  = 'bottle'
-    IMG_SIZE        = 224
-    BATCH_SIZE      = 32
-
-    # Training epochs
-    EPOCHS_VIT      = 30
-    EPOCHS_VAE      = 40
-    EPOCHS_DDPM     = 50
-    EPOCHS_CLF      = 20
-
-    # Learning rates
-    LR_VIT          = 1e-4
-    WEIGHT_DECAY    = 1e-4
-
-    # Model
-    LATENT_DIM      = 256
-    VAE_BETA        = 4.0
-    TIMESTEPS       = 1000
-    DDPM_CHANNELS   = 64
-
-    # Paths
-    CHECKPOINT_DIR  = './checkpoints'
-    DATA_ROOT       = './data'
-```
+Edit `DATASET_CHOICE` in **Cell 3** of the notebook to switch datasets.
 
 ---
 
-## 🏋️ Training
+## 🔬 NEU Steel — Defect Classes
 
-Training runs sequentially in the notebook. Each stage saves its best checkpoint:
-
-```
-Stage 1 → vit_best.pt          (ViT fine-tuning, ~15 min on T4)
-Stage 2 → vae_best.pt          (β-VAE, ~20 min on T4)
-Stage 3 → ddpm_best.pt         (DDPM, ~25 min on T4)
-Stage 4 → full_pipeline_best.pt (Fusion, ~5 min on T4)
-```
-
-**Progressive Unfreezing (ViT):**
-- Epochs 1–10: Train classification head + blocks 8–11 only
-- Epoch 10: Unfreeze all 86M params, rebuild optimiser at LR = 5×10⁻⁶
-- This avoids catastrophic forgetting and NaN instabilities
+| Class | Description | Images |
+|-------|-------------|--------|
+| Crazing | Diffuse network of fine surface cracks | 300 |
+| Inclusion | Foreign particles embedded in metal | 300 |
+| Patches | Large surface discolouration zones | 300 |
+| Pitted Surface | Localised material-loss cavities | 300 |
+| Rolled-in Scale | Elongated streaks from hot rolling | 300 |
+| Scratches | Fine abrasion marks from handling | 300 |
 
 ---
 
-## 📊 Evaluation
+## 🧠 Model Details
 
-```python
-from src.utils.evaluation import evaluate
+### ViT-B/16 — Vision Transformer
+- **Backbone:** `vit_base_patch16_224` pretrained on ImageNet-21k (14M images)
+- **Progressive unfreezing:** Blocks 0–7 frozen in Phase 1 (epochs 1–10); all 86M parameters unfrozen in Phase 2 (epoch 10+)
+- **Critical fix:** `CosineAnnealingLR` replaces `OneCycleLR` — the original scheduler caused NaN losses when new parameter groups were added at the unfreezing boundary
+- **Custom head:** `768 → 512 → 256 → NUM_CLASSES` with LayerNorm, GELU, and Dropout
 
-preds, labels, probs, metrics = evaluate(pipeline, test_loader)
-# Output: Accuracy, Weighted F1, Macro AUC-ROC
-# Plots:  Confusion matrix + per-class ROC curves
-```
+### β-VAE — Anomaly Detector
+- **Architecture:** 5-stage convolutional encoder–decoder (224×224 → 7×7 → 256-d latent → 224×224)
+- **β = 4.0** — enforces structured disentangled latent space
+- **Anomaly score:** `A(x) = mean|x − x̂|` → calibrated to percentage → NORMAL / LOW / MODERATE / HIGH
+- **Critical fix:** AMP (mixed precision) is **disabled** — `ConvTranspose2d` + `BatchNorm` + AMP silently corrupts weights without visible loss changes. Training in float32 resolves this.
 
----
+### DDPM — Diffusion Model
+- **Noise schedule:** Linear β₁=0.0001 → β_T=0.02, T=1,000 steps
+- **Architecture:** Lightweight U-Net with sinusoidal timestep conditioning, operates at 56×56 internally
+- **Generates** photorealistic defect images for data augmentation
 
-## 🌐 Gradio Web App
-
-The standalone app is in `app.py`. Run it after placing checkpoints in `./checkpoints/`:
-
-```bash
-python app.py
-```
-
-**Two modes:**
-
-| Mode | Description |
-|------|-------------|
-| **Detection** | Upload → ViT class prediction + β-VAE anomaly heatmap |
-| **Generation** | Upload → DDPM forward diffusion visualisation (t=0 → t=999) |
-
-**Anomaly severity scale:**
-
-| Score | Level |
-|-------|-------|
-| < 8% | 🟢 NORMAL |
-| 8–25% | 🟡 LOW |
-| 25–55% | 🟠 MODERATE |
-| > 55% | 🔴 HIGH |
+### Fusion Classifier
+- **Input streams:** ViT [CLS] features (768-d) + VAE latent mean μ (256-d) + scalar anomaly score (1-d) = 769-d
+- **MLP:** `769 → 512 → 256 → NUM_CLASSES` with GELU and Dropout
+- Only **~1% of total parameters** — the heavy lifting is done by the pretrained backbones
 
 ---
 
-## 📈 Results
+## 📊 Results
 
-Results on **NEU Steel Surface Defect Database** (6 classes, 1,800 images):
+### Test Set Performance (NEU Steel)
 
-| Metric | Value |
+| Metric | Score |
 |--------|-------|
-| Test Accuracy | **100.00%** |
+| Accuracy | **100.00%** (270/270) |
 | Weighted F1 | **1.0000** |
-| Macro AUC-ROC | **1.0000** |
+| AUC-ROC | Macro OvR |
 
-> Live inference confirmed on Hugging Face Spaces — Crazing: 80.6% HIGH,
-> Inclusion: 26.1% MODERATE (severity-proportional scoring validated). see [outputs](outputs)
+### Live Inference (April 2026)
 
----
+| Image | Prediction | Confidence | Anomaly Score |
+|-------|-----------|-----------|--------------|
+| Crazing (flat surface) | ✅ Crazing | 66.53% | **80.6% HIGH** |
+| Crazing (curved surface) | ✅ Crazing | 54.46% | **58.5% HIGH** |
+| Inclusion | ✅ Inclusion | 90.24% | **26.1% MODERATE** |
 
-## 🐛 Known Issues & Fixes
-
-### 1. NaN Loss in ViT Training (Fixed ✅)
-**Problem:** `OneCycleLR` + progressive unfreezing caused NaN at epoch 15.  
-**Root cause:** Scheduler pre-computes step schedule at init; adding new param groups mid-run causes LR → ∞.  
-**Fix:** Switched to `CosineAnnealingLR` + **fully rebuild optimiser + scheduler at epoch 10**.
-
-### 2. Silent NaN Weights in β-VAE (Fixed ✅)
-**Problem:** AMP (float16) + `ConvTranspose2d` + `BatchNorm2d` silently corrupted weights.  
-**Root cause:** The NaN was invisible in training loss but apparent in near-zero reconstruction outputs.  
-**Fix:** **Disabled AMP for VAE training** — all operations in float32 (~15% slower, 100% stable).
+The anomaly scores correctly reflect **physical severity**: crazing (diffuse crack network across the full surface) scores higher than inclusion (compact localised spot).
 
 ---
 
-## 📄 License
+## ⚙️ Training Configuration
 
-MIT License — see [LICENSE](LICENSE).
+| Hyperparameter | ViT Phase 1 | ViT Phase 2 | β-VAE | DDPM | Fusion |
+|---------------|------------|------------|-------|------|--------|
+| Epochs | 10 | 20 | 40 | 50 | 20 |
+| Learning Rate | 1×10⁻⁴ | 5×10⁻⁶ | 2×10⁻⁴ | 2×10⁻⁴ | 5×10⁻⁵ |
+| Optimiser | AdamW | AdamW (rebuilt) | Adam | AdamW | AdamW |
+| Scheduler | CosineAnnealingLR | CosineAnnealingLR | CosineAnnealingLR | CosineAnnealingLR | CosineAnnealingLR |
+| AMP | ✅ Enabled | ✅ Enabled | ❌ Disabled | ✅ Enabled | ✅ Enabled |
+| Batch Size | 32 | 32 | 32 | 16 | 32 |
+| Grad Clip | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
+
+**Data split:** 70% train / 15% validation / 15% test (seed=42, `WeightedRandomSampler` for class balance)
 
 ---
 
-## 🙏 Citation
+## 🔧 Known Issues & Fixes
+
+### Fix 1 — ViT: OneCycleLR + Progressive Unfreezing → NaN Loss
+**Problem:** `OneCycleLR` pre-computes its step schedule at initialisation. Adding new parameter groups at epoch 10 (`unfreeze_all()`) made the internal state inconsistent, causing NaN losses within 2 epochs.
+
+**Fix:** Switch to `CosineAnnealingLR` and completely **rebuild** the optimiser and scheduler as new instances at epoch 10.
+
+### Fix 2 — β-VAE: Silent NaN Weights from AMP
+**Problem:** PyTorch AMP (`autocast`) with `ConvTranspose2d` + `BatchNorm2d` in the decoder silently corrupts model weights — the training loss stays finite, but reconstruction outputs collapse to near-uniform grey.
+
+**Fix:** Disable AMP entirely for the VAE. Train exclusively in `float32`. ~15% slower but completely stable.
+
+---
+
+## 🖥️ Application Modes
+
+### Detection Mode
+1. Upload a surface image
+2. ViT classifies the defect type and confidence
+3. β-VAE generates a pixel-level anomaly heatmap
+4. Results: class label, confidence %, anomaly severity, full probability distribution
+
+### Generation Mode
+1. Upload any surface image
+2. DDPM forward diffusion visualised at t = 0, 200, 400, 600, 800, 999
+3. Demonstrates how the model progressively corrupts the input to pure Gaussian noise (and learns to reverse this process to generate new defect images)
+
+---
+
+## 📦 Dependencies
+
+```txt
+torch
+torchvision
+timm
+diffusers
+transformers
+accelerate
+einops
+torchmetrics
+scikit-learn
+matplotlib
+seaborn
+tqdm
+kaggle
+gdown
+Pillow
+opencv-python-headless
+onnxscript
+gradio
+```
+
+Install all at once:
+```bash
+pip install timm diffusers transformers accelerate einops torchmetrics \
+            scikit-learn matplotlib seaborn tqdm kaggle gdown \
+            Pillow opencv-python-headless onnxscript gradio
+```
+
+---
+
+## 📁 Checkpoints
+
+After training, the notebook saves the following files to `/content/checkpoints/`:
+
+| File | Size | Contents |
+|------|------|----------|
+| `vit_best.pt` | ~334 MB | ViT-B/16 + head (best val_acc) |
+| `vae_best.pt` | ~99 MB | β-VAE encoder + decoder (best ELBO) |
+| `ddpm_best.pt` | ~52 MB | DDPM U-Net |
+| `full_pipeline_best.pt` | ~449 MB | ViT + VAE + Fusion combined |
+| `vit_neu_steel.onnx` | — | ViT exported to ONNX (opset 14) |
+
+Download the primary checkpoint with the last notebook cell:
+```python
+from google.colab import files
+files.download('/content/checkpoints/full_pipeline_best.pt')
+```
+
+---
+
+## 📖 Citation
+
+If you use this work, please cite:
 
 ```bibtex
-@misc{paudel2026defect,
+@mastersthesis{paudel2026defect,
   author    = {Paudel, Dipak},
-  title     = {Industrial Defect Detection using ViT + β-VAE + DDPM},
+  title     = {Developing High-Level AI Architectures and Systems for Industrial
+               Defect Detection using Transformers, VAEs, and Diffusion Models},
+  school    = {University of Debrecen, Faculty of Informatics},
   year      = {2026},
-  publisher = {GitHub},
-  url       = {https://github.com/dipakphp/industrial-defect-detection}
+  type      = {Master's Thesis},
+  supervisor = {Dr. Robert Lakatos}
 }
 ```
 
 ---
 
-## 👤 Author
+## 📚 Key References
 
-**Dipak Paudel** — MSc Data Science, University of Debrecen  
-Supervisor: Dr. Robert Lakatos
+| # | Paper |
+|---|-------|
+| [1] | Dosovitskiy et al. — *An Image is Worth 16×16 Words: Transformers for Image Recognition at Scale* (ICLR 2021) |
+| [2] | Higgins et al. — *β-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework* (ICLR 2017) |
+| [3] | Ho et al. — *Denoising Diffusion Probabilistic Models* (NeurIPS 2020) |
+| [4] | Song & Yan — *NEU Surface Defect Database* (Applied Surface Science, 2013) |
+| [5] | Bergmann et al. — *MVTec AD: A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection* (CVPR 2019) |
+
+---
+
+## 📜 License
+
+This project is released for academic and research purposes.  
+© 2026 Paudel Dipak — University of Debrecen, Faculty of Informatics.
+
+---
+
+<div align="center">
+
+**Built with PyTorch · timm · Gradio · Hugging Face**
+
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Live%20Demo-Hugging%20Face-blue?style=flat-square)](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)
+&nbsp;&nbsp;
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
+&nbsp;&nbsp;
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange?style=flat-square&logo=pytorch)
+&nbsp;&nbsp;
+![License](https://img.shields.io/badge/License-Academic-green?style=flat-square)
+
+*University of Debrecen · Faculty of Informatics · Data Science MSc · 2026*
+
+</div>
