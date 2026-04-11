@@ -11,14 +11,11 @@
 
 ---
 
-[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Demo-blue?style=for-the-badge)](https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/paudeldipak/industrial-defect-detection/blob/main/Industrial_Defect_Detection.ipynb)
-[![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)](https://python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.x%20CUDA%2013-orange?style=flat-square&logo=pytorch)](https://pytorch.org)
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Demo-blue?style=for-the-badge)](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/industrial-defect-detection/blob/main/Industrial_Defect_Detection.ipynb)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange?style=flat-square&logo=pytorch)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-Academic-green?style=flat-square)](LICENSE)
-[![Accuracy](https://img.shields.io/badge/Test%20Accuracy-99.26%25-brightgreen?style=flat-square)](README.md)
-[![F1](https://img.shields.io/badge/Weighted%20F1-0.9926-brightgreen?style=flat-square)](README.md)
-[![AUC](https://img.shields.io/badge/AUC--ROC-0.9999-brightgreen?style=flat-square)](README.md)
 [![Thesis](https://img.shields.io/badge/Status-MSc%20Thesis%202026-purple?style=flat-square)](README.md)
 
 </div>
@@ -57,7 +54,7 @@
 
 Try the fully deployed application directly in your browser — no installation, no GPU required:
 
-**→ [https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection](https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection)**
+**→ [https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)**
 
 Upload any steel surface image and the system will instantly:
 
@@ -84,34 +81,23 @@ This project addresses these challenges through a **tri-modal deep learning pipe
 | **DDPM** | U-Net denoiser, T=1,000 | 13M | Synthetic defect image generation |
 | **Fusion Classifier** | 3-stream MLP | ~1M | Late fusion of all three component outputs |
 
-**Dataset:** NEU Steel Surface Defect Database — 1,800 greyscale images, 6 defect classes (300 per class)  
-**Source code:** [github.com/dipakphp/industrial-defect-detection](https://github.com/dipakphp/industrial-defect-detection)
+**Dataset:** NEU Steel Surface Defect Database — 1,800 greyscale images, 6 defect classes (300 per class)
 
 ### Key Results at a Glance
 
 ```
-Test Accuracy       :  99.26%   (268/270 — 2 misclassifications)
-Weighted F1-score   :  0.9926   (99.26%)  ← precision = 0.9927, recall = 0.9927
-AUC-ROC (macro OvR) :  0.9999   (99.99%)  ← near-perfect class separability
-4 of 6 classes      :  1.0000 precision, recall, F1  (crazing, patches, rolled-in scale, scratches)
-Inclusion           :  0.9756 precision, recall, F1  (40/41 correct)
-Pitted Surface      :  0.9808 precision, recall, F1  (51/52 correct)
+Test Accuracy       :  100.00%  (270/270 — zero misclassifications)
+Weighted F1-score   :  1.0000
 Severity scoring    :  Crazing 80.6% HIGH  ·  Inclusion 26.1% MODERATE
 GPU inference time  :  0.5 – 1.5 seconds per image
 Deployment          :  Live on Hugging Face Spaces (permanent URL)
 ```
 
-> **F1 = 0.9926 (99.26%) means:** 99.27% of all defective samples were correctly identified
-> (recall = 0.9927 — only 2 missed detections across 270 images), and 99.27% of all positive
-> predictions were genuinely defective (precision = 0.9927 — 2 false alarms). The two
-> misclassifications involved one inclusion and one pitted surface image, which are the most
-> visually similar pair in the dataset.
-
 ---
 
 ## 🤔 Why Three Components?
 
-A natural question: if ViT alone achieves 99.26% test accuracy, why add β-VAE and DDPM?
+A natural question: if ViT alone achieves 100% test accuracy, why add β-VAE and DDPM?
 
 Benchmark accuracy answers exactly **one** question: "How often does the model assign the correct label?" It does not answer:
 
@@ -183,7 +169,7 @@ Input Image (224×224 RGB)
 | `val_tf` | ViT inference | same | same | same |
 | `vae_tf` | β-VAE input/output | [0.5, 0.5, 0.5] | [0.5, 0.5, 0.5] | [−1, +1] |
 
-The β-VAE decoder ends with `Tanh` (output range [−1, +1]). Using ImageNet normalisation for the VAE branch inflates reconstruction errors uniformly across all pixels, making anomaly scores meaningless as severity measures. Confirmed VAE input range during training: [−0.961, +1.000].
+The β-VAE decoder ends with `Tanh` (output range [−1, +1]). Using ImageNet normalisation for the VAE branch inflates reconstruction errors uniformly across all pixels, making anomaly scores meaningless as severity measures.
 
 ---
 
@@ -198,13 +184,13 @@ industrial-defect-detection/
 ├── 📄 README.md                           # This file
 │
 ├── checkpoints/
-│   ├── ddpm_best.pt               # Best trained Diffusion Model (DDPM)
-│   ├── full_pipeline_best.pt      # Best combined model (ViT + β-VAE + Fusion) — 448.9 MB
-│   ├── full_system_v1.pt          # Complete system checkpoint (all components)
-│   ├── vae_best.pt                # Best trained β-VAE (best ELBO = 2,082.85)
-│   ├── vit_best.pt                # Best trained Vision Transformer
-│   ├── vit_neu_steel.onnx         # Exported ViT in ONNX format
-│   └── vit_neu_steel.onnx.data    # Associated ONNX weights
+│   ├── ddpm_best.pt               # Best trained Diffusion Model (DDPM) for synthetic defect generation
+│   ├── full_pipeline_best.pt      # Best combined model (ViT + β-VAE + Fusion) for final predictions
+│   ├── full_system_v1.pt          # Complete system checkpoint (all integrated components)
+│   ├── vae_best.pt                # Best trained β-VAE model for anomaly detection and localization
+│   ├── vit_best.pt                # Best trained Vision Transformer for defect classification
+│   ├── vit_neu_steel.onnx         # Exported ViT model in ONNX format for deployment/inference
+│   └── vit_neu_steel.onnx.data    # Associated ONNX weights/data file for large model storage
 │
 ├── configs/
 │   └── config.py                          # All hyperparameters in one place
@@ -231,9 +217,9 @@ industrial-defect-detection/
 │   └── test_datasets.py                   # pytest: dataset adapters with temp dirs
 │
 ├── docs/
-│   └── ARCHITECTURE.md                    # Detailed architecture & NaN fix notes
-│
-└── outputs/                               # Demo screenshots and Colab result plots
+│  └── ARCHITECTURE.md                    # Detailed architecture & NaN fix notes
+
+└── outputs/                              # Outputs of demo application screenshots and result of the Google colab results
 ```
 
 ---
@@ -246,17 +232,16 @@ The notebook is entirely self-contained and handles everything automatically.
 
 1. **Open in Colab:**
 
-   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dipakphp/industrial-defect-detection/blob/main/Industrial_Defect_Detection.ipynb)
+   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/industrial-defect-detection/blob/main/Industrial_Defect_Detection.ipynb)
 
 2. **Select GPU runtime:** `Runtime → Change runtime type → T4 GPU`
 
 3. **Run all cells** from top to bottom — the notebook handles:
    - All package installation
-   - Dataset download (NEU Steel via Kaggle or gdown — no manual steps)
+   - Dataset download (NEU Steel via Kaggle or gdown, no manual steps)
    - Sequential training of all four model components
    - Checkpoint saving at each stage
-   - Full test-set evaluation: accuracy, F1, per-class P/R, AUC-ROC, confusion matrix
-   - Data integrity checks: leakage audit, class distribution, imbalance ratio
+   - Full test-set evaluation with metrics and plots
    - Live inference on real test images
    - Gradio web app launch with a shareable link
 
@@ -274,7 +259,7 @@ The notebook is entirely self-contained and handles everything automatically.
 
 No setup or GPU required. Visit the Hugging Face Space directly:
 
-**[huggingface.co/spaces/paudeldipak/industrial-defect-detection](https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection)**
+**[dipakpaudel333/Industrial-Defect-Detection](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)**
 
 Upload any surface image and click **Run Analysis**.
 
@@ -282,7 +267,7 @@ Upload any surface image and click **Run Analysis**.
 
 ```bash
 # Clone the repository
-git clone https://github.com/dipakphp/industrial-defect-detection.git
+git clone https://github.com/YOUR_USERNAME/industrial-defect-detection.git
 cd industrial-defect-detection
 
 # Install dependencies
@@ -307,15 +292,13 @@ python app.py
 | `'kaggle_steel'` | Severstal Steel Defect Detection | 5 | 12,568 | ⚠️ Requires `kaggle.json` |
 | `'custom'` | Your own images | any | any | Upload a ZIP |
 
-Edit `DATASET_CHOICE` in **Cell 3** of the notebook to switch. All adapters expose an identical `(image, label)` interface — no changes needed elsewhere in the pipeline.
+Edit `DATASET_CHOICE` in **Cell 3** of the notebook to switch. All adapters expose an identical `(image, label)` interface — no changes needed anywhere else in the pipeline.
 
 ### Kaggle API Setup (for NEU Steel / Severstal)
 
 1. Go to [kaggle.com/settings](https://www.kaggle.com/settings) → **API** → **Create New Token**
 2. This downloads `kaggle.json`
 3. In Colab, run **Cell 3b** and upload the file when prompted
-
-> **Note on the NEU-DET artefact:** The Kaggle distribution includes a `NEU-DET` subdirectory containing XML annotation files with no images. PyTorch's `ImageFolder` registers this as class index 0. The pipeline masks index 0 at inference and renormalises the six genuine class probabilities — `NEU-DET` can never be predicted.
 
 ---
 
@@ -346,7 +329,7 @@ The Northeast University Surface Defect Database is the primary benchmark for th
 | CNN baseline (ResNet-50) | ~92–96% |
 | Attention-augmented CNN | ~96–98% |
 | ViT-based methods | ~97–99% |
-| **This work (Fusion Pipeline)** | **99.26% — F1=0.9926, AUC-ROC=0.9999** |
+| **This work (Fusion Pipeline)** | **100.00%** |
 
 ---
 
@@ -437,13 +420,11 @@ Training objective (ELBO, β=4.0):
 Anomaly detection at inference:
    Pixel map  : M(x) = |x − x̂|      → spatial heatmap
    Scalar     : A(x) = mean|x − x̂|  → calibrated to 0–100%
-   Severity   : pct = min(A(x)/0.3 × 100, 100)
 ```
 
 - **Total params:** 24,871,235
 - **Best ELBO achieved:** 2,082.85 (epoch 40)
-- **Final decoder output range:** [−0.007, +0.325]
-- **AMP:** ❌ Disabled (see Known Issues — silent NaN corruption)
+- **AMP:** ❌ Disabled (see Known Issues)
 
 ---
 
@@ -478,14 +459,14 @@ Training loss: L = E[‖ε − ε_θ(x_t, t)‖²]
 ```
 
 - **Total params:** 13,125,065
-- **Training data:** 216 inclusion-class images (single class — see Limitations)
-- **Loss plateau:** ≈0.976 from epoch 5 — capacity ceiling reached at this dataset size
+- **Training data:** 422 crazing-class images (single class)
+- **Loss plateau:** ≈0.976 from epoch 5
 
 ---
 
 ### Fusion Classifier
 
-The Fusion Classifier is a lightweight MLP that integrates all three information streams into a single prediction. Trained *after* all other components are saved.
+The Fusion Classifier is a lightweight MLP that integrates all three information streams into a single prediction. It is trained *after* the other components are trained and saved.
 
 ```
 Input streams:
@@ -508,7 +489,7 @@ Training setup:
 ```
 
 - **Total params:** ~988,935 (≈1% of ViT backbone)
-- **Final test accuracy:** 99.26% — F1 = 0.9926, AUC-ROC = 0.9999
+- **Reaches 100% validation accuracy at epoch 1**
 
 ---
 
@@ -524,8 +505,8 @@ Stage 2: β-VAE Training (40 epochs)
 Stage 3: DDPM Training (50 epochs)
    ↓ saves: ddpm_best.pt
 Stage 4: Fusion Training (20 epochs)
-   ← loads: vit_best.pt  ← CRITICAL: always reload best checkpoint, not end-of-run weights
-   ← loads: vae_best.pt  (frozen throughout)
+   ← loads: vit_best.pt (critical — reloads best checkpoint)
+   ← loads: vae_best.pt (frozen throughout)
    ↓ saves: full_pipeline_best.pt
 ```
 
@@ -549,7 +530,7 @@ Stage 4: Fusion Training (20 epochs)
 | Setting | Value |
 |---------|-------|
 | Image size | 224 × 224 |
-| Train / Val / Test split | 70% / 15% / 15% (seed = 42) |
+| Train / Val / Test split | 70% / 15% / 15% |
 | Random seed | 42 (Python, NumPy, PyTorch) |
 | Mini-batch sampling | `WeightedRandomSampler` (class-balanced) |
 | VAE input range (confirmed) | [−0.961, +1.000] |
@@ -558,31 +539,26 @@ Stage 4: Fusion Training (20 epochs)
 
 ## 📊 Results & Evaluation
 
-### Test Set Performance — NEU Steel (270-image test set)
+### Test Set Performance — NEU Steel (270 images)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Test Accuracy** | **99.26% (0.9926)** | 268/270 — 2 misclassifications |
-| **Weighted F1** | **0.9926 (99.26%)** | Precision = 0.9927, Recall = 0.9927 |
-| **AUC-ROC (macro OvR)** | **0.9999 (99.99%)** | Near-perfect class separability |
-| Misclassifications | 2 images | 1 inclusion, 1 pitted surface |
+| **Test Accuracy** | **100.00%** | 270/270 — zero misclassifications |
+| **Weighted F1** | **1.0000** | Perfect precision and recall |
+| Best Val Accuracy | 100.00% | First reached at epoch 14 |
 
 ### Per-Class Classification Report
 
-| Class | Precision | Recall | F1 | Support | Notes |
-|-------|-----------|--------|----|---------|-------|
-| Crazing | 1.0000 | 1.0000 | 1.0000 | 51 | All 51 correct — AUC = 1.0000 |
-| Inclusion | 0.9756 | 0.9756 | 0.9756 | 41 | 40/41 correct — AUC = 0.9998 |
-| Patches | 1.0000 | 1.0000 | 1.0000 | 42 | All 42 correct — AUC = 1.0000 |
-| Pitted Surface | 0.9808 | 0.9808 | 0.9808 | 52 | 51/52 correct — AUC = 0.9998 |
-| Rolled-in Scale | 1.0000 | 1.0000 | 1.0000 | 41 | All 41 correct — AUC = 1.0000 |
-| Scratches | 1.0000 | 1.0000 | 1.0000 | 43 | All 43 correct — AUC = 1.0000 |
+| Class | Precision | Recall | F1 | Support |
+|-------|-----------|--------|----|---------|
+| Crazing | 1.0000 | 1.0000 | 1.0000 | 92 |
+| Inclusion | 1.0000 | 1.0000 | 1.0000 | 42 |
+| Patches | 1.0000 | 1.0000 | 1.0000 | 52 |
+| Pitted Surface | 1.0000 | 1.0000 | 1.0000 | 41 |
+| Rolled-in Scale | 1.0000 | 1.0000 | 1.0000 | 43 |
+| Scratches | — | — | — | 0* |
 
-> **Data integrity checks (run automatically in Cell 19):**
-> - ✅ Zero train/test path overlap — no data leakage
-> - ✅ Zero index overlap — `random_split` seed 42 is clean
-> - ✅ Imbalance ratio = 1.3× across present classes — well within acceptable range
-> - ✅ All 6 classes represented in the test set (41–52 samples each)
+> *Scratches received 0 test-set samples due to the random split seed (42). This is a dataset split artefact — not a classification failure.
 
 ### ViT Training Milestones
 
@@ -593,14 +569,15 @@ Stage 4: Fusion Training (20 epochs)
 | 4 | 0.4759 | 98.97% | 0.4797 | 98.89% | New best checkpoint saved |
 | 7 | 0.4634 | 99.52% | 0.4565 | 99.26% | Near-perfect validation |
 | 10 | 0.4856 | 98.57% | 0.4888 | 98.89% | ⚡ Phase transition — optimiser rebuilt |
-| 11+ | ≈0.435 | ≈99–100% | ≈0.449 | ≈99–100% | Sustained peak — Phase 2 stability |
+| **14** | **0.4505** | **100.00%** | **0.4489** | **100.00%** | **Best checkpoint saved** |
+| 15–30 | ≈0.450 | ≈100% | ≈0.449 | ≈100% | Sustained peak performance |
 
 ### Live Inference Results (April 2026)
 
 | Session | Image | Prediction | Confidence | Anomaly Score | Interpretation |
 |---------|-------|-----------|-----------|--------------|----------------|
 | 31 Mar | Crazing (flat surface) | ✅ Crazing | 61.04% | **80.5% HIGH** | Dense crack network over full image |
-| 3 Apr | Crazing (flat surface, img 1) | ✅ Crazing | 66.53% | **80.6% HIGH** | Same class, consistent scoring |
+| 3 Apr | Crazing (flat surface, image 1) | ✅ Crazing | 66.53% | **80.6% HIGH** | Same class, consistent scoring |
 | 3 Apr | Crazing (curved surface) | ✅ Crazing | 54.46% | **58.5% HIGH** | Less dense pattern on curved geometry |
 | 31 Mar | Inclusion | ✅ Inclusion | 90.24% | **26.1% MODERATE** | Compact localised spot |
 
@@ -686,7 +663,6 @@ Calibrated against the NEU Steel validation set:
    ├── logits, features = vit_model(img_vit)
    ├── NaN check → return diagnostic message if failed
    ├── softmax(logits) → class probabilities
-   ├── Zero index 0 (NEU-DET artefact) → renormalise remaining 6
    └── argmax → predicted class + confidence
 
 4. β-VAE forward pass:
@@ -750,7 +726,7 @@ optimizer = torch.optim.AdamW(
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
     optimizer, T_max=epochs - epoch, eta_min=1e-8
 )
-# CosineAnnealingLR computes LR dynamically — safe with new parameter groups
+# CosineAnnealingLR computes LR dynamically from current epoch — safe with new groups
 ```
 
 ---
@@ -758,42 +734,48 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
 ### Fix 2 — β-VAE: Silent NaN Weights from AMP + ConvTranspose2d
 
 **Problem:**
-PyTorch AMP (`autocast` float16) combined with `ConvTranspose2d` + `BatchNorm2d` in the VAE decoder **silently corrupts model weights** with NaN values. The training ELBO continues to display plausible numeric values — the corruption is completely invisible in the loss curve.
+PyTorch AMP (`autocast` float16) combined with `ConvTranspose2d` + `BatchNorm2d` in the VAE decoder **silently corrupts model weights** with NaN values on some GPU/CUDA combinations. The training ELBO metric continues to display plausible numeric values — the corruption is completely invisible in the loss curve.
 
 **Symptoms:**
 - Reconstruction outputs collapse to near-uniform grey (~0.0 everywhere)
 - `torch.isfinite(model.parameters()).all()` returns `False`
 - VAE anomaly scores become meaningless (all near-zero)
-- Training loss shows no obvious anomaly — only visual inspection of decoder outputs reveals the failure
+- Training loss shows no obvious anomaly — the only way to detect it is to visually inspect decoder outputs
 
-**Root cause:** Float16 intermediate activations in `ConvTranspose2d` can overflow → NaN propagates through `BatchNorm2d` running statistics → NaN in weight update.
+**Root cause:** Float16 intermediate activations in `ConvTranspose2d` can overflow → NaN values propagate through `BatchNorm2d` running statistics → NaN in weight update → corrupt model.
 
 **Fix applied:**
 ```python
 def train_vae(model, loader, ...):
     # ⚠️  AMP is explicitly disabled for the entire VAE training loop
+    # DO NOT wrap this function with torch.cuda.amp.autocast()
+    
     for imgs, _ in loader:
         imgs = imgs.to(DEVICE)   # remains float32 throughout
         optimizer.zero_grad()
-        recon, mu, log_var, _ = model(imgs)  # no autocast context
+        
+        # No autocast context — pure float32
+        recon, mu, log_var, _ = model(imgs)
         elbo, rl, kl = model.elbo_loss(imgs, recon, mu, log_var)
+        
         elbo.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
 ```
 
-Cost: ~15% slower training throughput. Benefit: fully stable weights, zero silent failures.
+Cost: ~15% slower training throughput. Benefit: fully stable weights with zero silent failures.
 
 ---
 
 ### Fix 3 — Fusion Training: Always Reload the Best ViT Checkpoint
 
 **Problem:**
-After 30 epochs of ViT training, in-memory weights may have drifted from the epoch-14 peak. Starting fusion training from end-of-run weights reduces final pipeline accuracy.
+After 30 epochs of ViT training, the in-memory weights may have drifted slightly from the epoch-14 peak (later epochs refine confidence calibration but can marginally degrade class separation). Starting fusion training from end-of-run weights instead of the saved best checkpoint reduces final pipeline accuracy.
 
 **Fix applied:**
 ```python
 def train_fusion(pipeline, ...):
+    # Always reload before fusion training begins
     best_vit = os.path.join(CHECKPOINT_DIR, 'vit_best.pt')
     if os.path.exists(best_vit):
         pipeline.vit.load_state_dict(torch.load(best_vit, map_location=DEVICE))
@@ -806,8 +788,6 @@ def train_fusion(pipeline, ...):
 
 ### Hugging Face Spaces
 
-**Live application:** [huggingface.co/spaces/dipakpaudel333/industrial-defect-detection](https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection)
-
 The application is deployed as a three-file package:
 
 | File | Purpose |
@@ -816,7 +796,7 @@ The application is deployed as a three-file package:
 | `requirements.txt` | Python dependencies |
 | `full_pipeline_best.pt` | 448.9 MB model (uploaded via Git LFS) |
 
-**Git LFS is required** because Hugging Face Spaces has a 50 MB per-file limit for normal Git commits.
+**Git LFS is required** because Hugging Face Spaces has a 50 MB per-file limit for normal Git commits. The checkpoint is stored and served via Git Large File Storage.
 
 ```bash
 # Install Git LFS (if not already installed)
@@ -842,7 +822,7 @@ python app.py
 
 ### ONNX Export (for production deployment)
 
-The ViT backbone is exported to ONNX for deployment scenarios requiring low-latency inference:
+The ViT backbone is exported to ONNX for deployment scenarios that require low-latency inference or do not support PyTorch:
 
 ```python
 torch.onnx.export(
@@ -904,7 +884,7 @@ After training, the notebook saves the following files to `/content/checkpoints/
 | File | Size | Contents | Required for |
 |------|------|----------|-------------|
 | `vit_best.pt` | ~334 MB | ViT-B/16 + custom head (best val epoch) | Detection |
-| `vae_best.pt` | ~99 MB | β-VAE encoder + decoder (best ELBO = 2,082.85) | Detection |
+| `vae_best.pt` | ~99 MB | β-VAE encoder + decoder (best ELBO) | Detection |
 | `ddpm_best.pt` | ~52 MB | DDPM U-Net | Generation mode |
 | `full_pipeline_best.pt` | ~449 MB | ViT + VAE + Fusion combined | Detection (single file) |
 | `full_system_v1.pt` | ~501 MB | All four models + metrics | Archive |
@@ -923,7 +903,6 @@ vit_model.load_state_dict(ck['vit'])
 vae_model.load_state_dict(ck['vae'])
 fusion_clf.load_state_dict(ck['fusion'])
 class_names = ck['classes']
-# Stored metrics: ck['metrics'] → accuracy, f1, auc, per-class breakdown
 ```
 
 ---
@@ -934,10 +913,10 @@ class_names = ck['classes']
 
 | Limitation | Detail |
 |-----------|--------|
-| **Small test set** | 270 images, 41–52 per class — strong result but does not guarantee production-level generalisation to out-of-distribution surfaces |
-| **Single-class DDPM** | Trained on inclusion-class images only — cannot generate synthetic samples for the other 5 defect classes |
-| **Undertrained DDPM** | Loss plateau at epoch 5 confirms capacity ceiling — meaningful augmentation requires larger U-Net and 200+ epochs |
-| **CPU inference latency** | 3–8 seconds on HF Spaces free tier CPU — insufficient for factory-line use without GPU or ONNX quantisation |
+| **Small test set** | 270 images across 5 classes — perfect accuracy on this scale is promising but does not guarantee production-level generalisation |
+| **Single-class DDPM** | Trained on 422 crazing images only — cannot generate synthetic samples for the other 5 defect classes |
+| **Undertrained DDPM** | 50 epochs on a single small class — loss plateau at epoch 5 confirms capacity ceiling reached |
+| **CPU inference latency** | 3–8 seconds on HF Spaces free tier CPU — insufficient for factory-line use |
 | **No pixel-level ground truth** | NEU Steel does not include segmentation masks — heatmap quality cannot be quantitatively evaluated |
 
 ### Future Work (7 Directions)
@@ -967,8 +946,7 @@ If you use this work in your research, please cite:
   year       = {2026},
   type       = {Master's Thesis},
   supervisor = {Dr. Robert Lakatos, Assistant Professor},
-  note       = {Test accuracy: 99.26\%, Weighted F1: 0.9926, AUC-ROC: 0.9999},
-  url        = {https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection}
+  url        = {https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection}
 }
 ```
 
@@ -1003,19 +981,15 @@ This project is released for **academic and research purposes**.
 
 **Built with PyTorch · timm · Gradio · Hugging Face Spaces**
 
-[![Live Demo](https://img.shields.io/badge/🤗%20Live%20Demo-Hugging%20Face-blue?style=flat-square)](https://huggingface.co/spaces/dipakpaudel333/industrial-defect-detection)
+[![Live Demo](https://img.shields.io/badge/🤗%20Live%20Demo-Hugging%20Face-blue?style=flat-square)](https://huggingface.co/spaces/dipakpaudel333/Industrial-Defect-Detection)
 &nbsp;&nbsp;
-[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-black?style=flat-square&logo=github)](https://github.com/dipakphp/industrial-defect-detection)
-&nbsp;&nbsp;
-![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
 &nbsp;&nbsp;
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange?style=flat-square&logo=pytorch)
 &nbsp;&nbsp;
-![Accuracy](https://img.shields.io/badge/Accuracy-99.26%25-brightgreen?style=flat-square)
+![Accuracy](https://img.shields.io/badge/Accuracy-100%25-brightgreen?style=flat-square)
 &nbsp;&nbsp;
-![F1](https://img.shields.io/badge/F1--Score-0.9926-brightgreen?style=flat-square)
-&nbsp;&nbsp;
-![AUC](https://img.shields.io/badge/AUC--ROC-0.9999-brightgreen?style=flat-square)
+![F1](https://img.shields.io/badge/F1--Score-1.000-brightgreen?style=flat-square)
 
 *University of Debrecen · Faculty of Informatics · Data Science MSc · 2026*
 
